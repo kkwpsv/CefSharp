@@ -16,6 +16,7 @@ using System.Windows.Threading;
 using CefSharp.Enums;
 using CefSharp.Internals;
 using CefSharp.Structs;
+using CefSharp.Wpf.Experimental;
 using CefSharp.Wpf.Internals;
 using CefSharp.Wpf.Rendering;
 using CefSharp.Wpf.Rendering.Experimental;
@@ -990,7 +991,11 @@ namespace CefSharp.Wpf
         /// <param name="characterBounds">is the bounds of each character in view coordinates.</param>
         protected virtual void OnImeCompositionRangeChanged(Range selectedRange, Rect[] characterBounds)
         {
-            //TODO: Implement this
+            var imeKeyboardHandler = WpfKeyboardHandler as WpfImeKeyboardHandler;
+            if (imeKeyboardHandler != null)
+            {
+                imeKeyboardHandler.ChangeCompositionRange(selectedRange, characterBounds);
+            }
         }
 
         void IRenderWebBrowser.OnVirtualKeyboardRequested(IBrowser browser, TextInputMode inputMode)
@@ -1792,7 +1797,7 @@ namespace CefSharp.Wpf
         /// </summary>
         /// <param name="action">The action.</param>
         /// <param name="priority">The priority.</param>
-        private void UiThreadRunAsync(Action action, DispatcherPriority priority = DispatcherPriority.DataBind)
+        internal void UiThreadRunAsync(Action action, DispatcherPriority priority = DispatcherPriority.DataBind)
         {
             if (Dispatcher.CheckAccess())
             {
