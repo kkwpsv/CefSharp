@@ -22,8 +22,7 @@ namespace CefSharp.Wpf
             //https://peter.sh/experiments/chromium-command-line-switches/#disable-threaded-scrolling
             //CefCommandLineArgs.Add("disable-threaded-scrolling");
 
-            CefCommandLineArgs.Add("disable-gpu-compositing");
-            CefCommandLineArgs.Add("show-fps-counter");
+            CefCommandLineArgs.Add("show-fps-counter", "1");
         }
     }
 }
