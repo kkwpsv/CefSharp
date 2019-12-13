@@ -173,14 +173,14 @@ namespace CefSharp.Example
                 IsSecure = true //treated with the same security rules as those applied to "https" URLs
             });
 
-            settings.RegisterScheme(new CefCustomScheme
-            {
-                SchemeName = "localfolder",
-                SchemeHandlerFactory = new FolderSchemeHandlerFactory(rootFolder: @"..\..\..\..\CefSharp.Example\Resources",
-                                                                    schemeName: "localfolder", //Optional param no schemename checking if null
-                                                                    hostName: "cefsharp", //Optional param no hostname checking if null
-                                                                    defaultPage: "home.html") //Optional param will default to index.html
-            });
+            //settings.RegisterScheme(new CefCustomScheme
+            //{
+            //    SchemeName = "localfolder",
+            //    SchemeHandlerFactory = new FolderSchemeHandlerFactory(rootFolder: @"..\..\..\..\CefSharp.Example\Resources",
+            //                                                        schemeName: "localfolder", //Optional param no schemename checking if null
+            //                                                        hostName: "cefsharp", //Optional param no hostname checking if null
+            //                                                        defaultPage: "home.html") //Optional param will default to index.html
+            //});
 
             settings.RegisterExtension(new V8Extension("cefsharp/example", Resources.extension));
 
