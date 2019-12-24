@@ -703,6 +703,8 @@ namespace CefSharp.Wpf
                 WpfKeyboardHandler.Dispose();
 
                 source = null;
+
+                (PresentationSource.FromVisual(this) as HwndSource).RemoveHook(DpiChangedHook);
             }
 
             Cef.RemoveDisposable(this);
@@ -1911,10 +1913,24 @@ namespace CefSharp.Wpf
             //Initial value for screen location
             browserScreenLocation = GetBrowserScreenLocation();
 
+            (PresentationSource.FromVisual(this) as HwndSource).AddHook(DpiChangedHook);
+
             if (RenderHandler is AcceleratedPaintRenderHandler)
             {
                 CompositionTarget.Rendering += (_, __) => { this.GetBrowserHost()?.SendExternalBeginFrame(); };
             }
+        }
+
+        private IntPtr DpiChangedHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+        {
+            int WM_DPICHANGED = 0x02E0;
+            if (msg == WM_DPICHANGED)
+            {
+                var dpi = wParam.CastToInt32() >> 16;
+                NotifyDpiChange(dpi / 96);
+                handled = true;
+            }
+            return IntPtr.Zero;
         }
 
         /// <summary>

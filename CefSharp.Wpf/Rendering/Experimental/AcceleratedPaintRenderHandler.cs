@@ -47,8 +47,8 @@ namespace CefSharp.Wpf.Rendering.Experimental
                     if (sharedHandle != lastTexture && renderer.SetTexture(sharedHandle, out var width, out var height))
                     {
                         lastTexture = sharedHandle;
+
                         var scale = PresentationSource.FromVisual(image).CompositionTarget.TransformToDevice.M11;
-                        //scale = 1;
                         d3D11Image.SetPixelSize((int)(width / scale), (int)(height / scale));
                     }
 
