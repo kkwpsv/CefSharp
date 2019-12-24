@@ -11,12 +11,14 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Interop;
+using System.Windows.Media;
 using System.Windows.Threading;
 using CefSharp.Enums;
 using CefSharp.Internals;
 using CefSharp.Structs;
 using CefSharp.Wpf.Internals;
 using CefSharp.Wpf.Rendering;
+using CefSharp.Wpf.Rendering.Experimental;
 using Microsoft.Win32.SafeHandles;
 using CursorType = CefSharp.Enums.CursorType;
 using Point = System.Windows.Point;
@@ -560,7 +562,7 @@ namespace CefSharp.Wpf
 
             ResourceHandlerFactory = new DefaultResourceHandlerFactory();
             browserSettings = new BrowserSettings(frameworkCreated: true);
-            RenderHandler = new InteropBitmapRenderHandler();
+            RenderHandler = new AcceleratedPaintRenderHandler();
 
             WpfKeyboardHandler = new WpfKeyboardHandler(this);
 
@@ -875,7 +877,7 @@ namespace CefSharp.Wpf
         /// <param name="sharedHandle">is the handle for a D3D11 Texture2D that can be accessed via ID3D11Device using the OpenSharedResource method.</param>
         protected virtual void OnAcceleratedPaint(bool isPopup, Rect dirtyRect, IntPtr sharedHandle)
         {
-            RenderHandler?.OnAcceleratedPaint(isPopup, dirtyRect, sharedHandle);
+            RenderHandler?.OnAcceleratedPaint(isPopup, dirtyRect, sharedHandle, image);
         }
 
         /// <summary>
@@ -1773,6 +1775,8 @@ namespace CefSharp.Wpf
         {
             var windowInfo = new WindowInfo();
             windowInfo.SetAsWindowless(handle);
+            windowInfo.ExternalBeginFrameEnabled = true;
+            windowInfo.SharedTextureEnabled = true;
             return windowInfo;
         }
 
@@ -1906,6 +1910,11 @@ namespace CefSharp.Wpf
 
             //Initial value for screen location
             browserScreenLocation = GetBrowserScreenLocation();
+
+            if (RenderHandler is AcceleratedPaintRenderHandler)
+            {
+                CompositionTarget.Rendering += (_, __) => { this.GetBrowserHost()?.SendExternalBeginFrame(); };
+            }
         }
 
         /// <summary>
