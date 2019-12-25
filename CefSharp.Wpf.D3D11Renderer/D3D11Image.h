@@ -34,6 +34,7 @@ namespace CefSharp
 
             public:
                 D3D11Image();
+                D3D11Image(double dpiX, double dpiY);
                 ~D3D11Image();
 
                 static DependencyProperty^ OnRenderProperty;

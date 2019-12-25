@@ -11,6 +11,7 @@ namespace CefSharp.Wpf.Rendering.Experimental
     public class AcceleratedPaintRenderHandler : IRenderHandler
     {
         IntPtr lastTexture = IntPtr.Zero;
+        double lastScale = 0;
         Renderer renderer;
 
         public AcceleratedPaintRenderHandler()
@@ -34,22 +35,22 @@ namespace CefSharp.Wpf.Rendering.Experimental
                 try
                 {
                     var d3D11Image = image.Source as D3D11Image;
-                    if (d3D11Image == null)
+                    var scale = PresentationSource.FromVisual(image).CompositionTarget.TransformToDevice.M11;
+                    if (lastScale != scale || d3D11Image == null)
                     {
-                        d3D11Image = new D3D11Image
+                        d3D11Image = new D3D11Image(scale * 96, scale * 96)
                         {
                             WindowOwner = (PresentationSource.FromVisual(image) as HwndSource).Handle,
                             OnRender = renderer.Render,
                         };
                         image.Source = d3D11Image;
+                        lastScale = scale;
                     }
 
                     if (sharedHandle != lastTexture && renderer.SetTexture(sharedHandle, out var width, out var height))
                     {
                         lastTexture = sharedHandle;
-
-                        var scale = PresentationSource.FromVisual(image).CompositionTarget.TransformToDevice.M11;
-                        d3D11Image.SetPixelSize((int)(width / scale), (int)(height / scale));
+                        d3D11Image.SetPixelSize(width, height);
                     }
 
 

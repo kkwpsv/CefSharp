@@ -704,7 +704,7 @@ namespace CefSharp.Wpf
 
                 source = null;
 
-                (PresentationSource.FromVisual(this) as HwndSource).RemoveHook(DpiChangedHook);
+                (PresentationSource.FromVisual(this) as HwndSource)?.RemoveHook(DpiChangedHook);
             }
 
             Cef.RemoveDisposable(this);
@@ -725,6 +725,8 @@ namespace CefSharp.Wpf
         /// <returns>ScreenInfo containing the current DPI scale factor</returns>
         protected virtual ScreenInfo? GetScreenInfo()
         {
+            //LogProvider.Default.Info($"GetScreenInfo Dpi={DpiScaleFactor}\n");
+
             Rect rect = monitorInfo.Monitor;
             Rect availableRect = monitorInfo.WorkArea;
 
@@ -1926,9 +1928,9 @@ namespace CefSharp.Wpf
             int WM_DPICHANGED = 0x02E0;
             if (msg == WM_DPICHANGED)
             {
-                var dpi = wParam.CastToInt32() >> 16;
-                NotifyDpiChange(dpi / 96);
-                handled = true;
+                var dpi = wParam.CastToInt32() & 0xFFFF;
+                var scale = (float)dpi / 96;
+                NotifyDpiChange(scale);
             }
             return IntPtr.Zero;
         }

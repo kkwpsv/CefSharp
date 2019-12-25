@@ -24,6 +24,11 @@ namespace CefSharp
             {
             }
 
+            D3D11Image::D3D11Image(double dpiX, double dpiY) : D3DImage(dpiX, dpiY)
+            {
+
+            }
+
             D3D11Image::~D3D11Image()
             {
                 if (this->Helper != nullptr)
