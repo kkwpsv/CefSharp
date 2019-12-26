@@ -13,6 +13,7 @@ namespace CefSharp.Wpf.Rendering.Experimental
         IntPtr lastTexture = IntPtr.Zero;
         double lastScale = 0;
         Renderer renderer;
+        object @lock = new object();
 
         public AcceleratedPaintRenderHandler()
         {
@@ -30,27 +31,34 @@ namespace CefSharp.Wpf.Rendering.Experimental
             {
                 try
                 {
-                    var d3D11Image = image.Source as D3D11Image;
-                    var scale = PresentationSource.FromVisual(image).CompositionTarget.TransformToDevice.M11;
-                    if (lastScale != scale || d3D11Image == null)
+                    lock (@lock)
                     {
-                        d3D11Image = new D3D11Image(scale * 96, scale * 96)
+                        if (renderer == null)
                         {
-                            WindowOwner = (PresentationSource.FromVisual(image) as HwndSource).Handle,
-                            OnRender = renderer.Render,
-                        };
-                        image.Source = d3D11Image;
-                        lastScale = scale;
+                            return;
+                        }
+                        var d3D11Image = image.Source as D3D11Image;
+                        var scale = PresentationSource.FromVisual(image).CompositionTarget.TransformToDevice.M11;
+                        if (lastScale != scale || d3D11Image == null)
+                        {
+                            d3D11Image = new D3D11Image(scale * 96, scale * 96)
+                            {
+                                WindowOwner = (PresentationSource.FromVisual(image) as HwndSource).Handle,
+                                OnRender = renderer.Render,
+                            };
+                            image.Source = d3D11Image;
+                            lastScale = scale;
+                        }
+
+                        if (sharedHandle != lastTexture && renderer.SetTexture(sharedHandle, out var width, out var height))
+                        {
+                            lastTexture = sharedHandle;
+                            d3D11Image.SetPixelSize(width, height);
+                        }
+
+
+                        d3D11Image.RequestRender(new Int32Rect(0, 0, d3D11Image.PixelWidth, d3D11Image.PixelHeight));
                     }
-
-                    if (sharedHandle != lastTexture && renderer.SetTexture(sharedHandle, out var width, out var height))
-                    {
-                        lastTexture = sharedHandle;
-                        d3D11Image.SetPixelSize(width, height);
-                    }
-
-
-                    d3D11Image.RequestRender(new Int32Rect(0, 0, d3D11Image.PixelWidth, d3D11Image.PixelHeight));
                 }
                 catch
                 {
@@ -75,7 +83,11 @@ namespace CefSharp.Wpf.Rendering.Experimental
             {
                 if (renderer != null)
                 {
-                    renderer.Dispose();
+                    lock (@lock)
+                    {
+                        renderer.Dispose();
+                        renderer = null;
+                    }
                 }
 
                 disposedValue = true;
