@@ -19,13 +19,9 @@ namespace CefSharp.Wpf.Rendering.Experimental
             renderer = new Renderer();
             if (!renderer.Init())
             {
+                renderer.Dispose();
                 throw new Exception("Init renderer failed");
             }
-        }
-
-
-        public void Dispose()
-        {
         }
 
         public void OnAcceleratedPaint(bool isPopup, Rect dirtyRect, IntPtr sharedHandle, Image image)
@@ -69,5 +65,33 @@ namespace CefSharp.Wpf.Rendering.Experimental
         {
 
         }
+
+        #region IDisposable Support
+        private bool disposedValue = false;
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (renderer != null)
+                {
+                    renderer.Dispose();
+                }
+
+                disposedValue = true;
+            }
+        }
+
+        ~AcceleratedPaintRenderHandler()
+        {
+            Dispose(false);
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        #endregion
     }
 }

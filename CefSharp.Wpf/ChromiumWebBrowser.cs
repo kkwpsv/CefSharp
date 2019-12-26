@@ -705,6 +705,8 @@ namespace CefSharp.Wpf
                 source = null;
 
                 (PresentationSource.FromVisual(this) as HwndSource)?.RemoveHook(DpiChangedHook);
+
+                RenderHandler?.Dispose();
             }
 
             Cef.RemoveDisposable(this);

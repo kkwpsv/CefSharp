@@ -25,31 +25,86 @@ ID3DBlob* CompileShader(const char* sourceCode, const char* entryPoint, const ch
 
     auto const hr = D3DCompile(sourceCode, strlen(sourceCode), nullptr, nullptr, nullptr, entryPoint, model, flags, 0, &blob, &blob_err);
 
-    if (FAILED(hr))
-    {
-        if (blob_err)
-        {
-            blob_err->Release();
-        }
-        return nullptr;
-    }
-
     if (blob_err)
     {
         blob_err->Release();
     }
-    return blob;
+
+    if (FAILED(hr))
+    {
+        return nullptr;
+    }
+    else
+    {
+        return blob;
+    }
+}
+
+RendererImp::~RendererImp()
+{
+    if (device)
+    {
+        device->Release();
+    }
+    if (deviceContext)
+    {
+        deviceContext->Release();
+    }
+    if (vertexBuffer)
+    {
+        vertexBuffer->Release();
+    }
+    if (vertexShaderBlob)
+    {
+        vertexShaderBlob->Release();
+    }
+    if (pixelShaderBlob)
+    {
+        pixelShaderBlob->Release();
+    }
+    if (vertexShader)
+    {
+        vertexShader->Release();
+    }
+    if (inputLayout)
+    {
+        inputLayout->Release();
+    }
+    if (pixelShader)
+    {
+        pixelShader->Release();
+    }
+    if (sampler)
+    {
+        sampler->Release();
+    }
+    if (renderTargetView)
+    {
+        renderTargetView->Release();
+    }
+    if (shaderResourceView)
+    {
+        shaderResourceView->Release();
+    }
 }
 
 bool RendererImp::Init()
 {
-    return InitDevice() && InitQuad() && InitEffect() /*&& CreateTestTexture()*/ && InitPipelines();
+    return InitDevice() && InitQuad() && InitEffect() && InitSampler() && InitPipelines();
 }
 
 bool RendererImp::SetTexture(void* sharedHandle, int& width, int& height)
 {
+    if (shaderResourceView)
+    {
+        shaderResourceView->Release();
+    }
+    ID3D11ShaderResourceView* views[1] = { nullptr };
+    deviceContext->PSSetShaderResources(0, 1, views);
+
     ID3D11Texture2D* texture = nullptr;
-    if (FAILED(device->OpenSharedResource(sharedHandle, __uuidof(ID3D11Texture2D), (void**)(&texture))))
+    auto hr = device->OpenSharedResource(sharedHandle, __uuidof(ID3D11Texture2D), (void**)(&texture));
+    if (FAILED(hr))
     {
         return false;
     }
@@ -64,6 +119,7 @@ bool RendererImp::SetTexture(void* sharedHandle, int& width, int& height)
 
     if (!(td.BindFlags & D3D11_BIND_SHADER_RESOURCE))
     {
+        texture->Release();
         return false;
     }
 
@@ -73,13 +129,14 @@ bool RendererImp::SetTexture(void* sharedHandle, int& width, int& height)
     srv_desc.Texture2D.MostDetailedMip = 0;
     srv_desc.Texture2D.MipLevels = 1;
 
-    if (FAILED(device->CreateShaderResourceView(texture, &srv_desc, &shaderResourceView)))
+    hr = device->CreateShaderResourceView(texture, &srv_desc, &shaderResourceView);
+    texture->Release();
+    if (FAILED(hr))
     {
-        texture->Release();
         return false;
     }
 
-    ID3D11ShaderResourceView* views[1] = { shaderResourceView };
+    views[0] = shaderResourceView;
     deviceContext->PSSetShaderResources(0, 1, views);
 
     return true;
@@ -89,12 +146,13 @@ void RendererImp::Render(void* surface, bool isNewSurface)
 {
     if (isNewSurface)
     {
+        if (renderTargetView)
+        {
+            renderTargetView->Release();
+        }
         deviceContext->OMSetRenderTargets(0, nullptr, nullptr);
         InitRenderTarget(surface);
     }
-
-    //float color[4] = { 0, 0, 1, 1 };
-    //deviceContext->ClearRenderTargetView(renderTargetView, color);
 
     deviceContext->Draw(4, 0);
     deviceContext->Flush();
@@ -105,6 +163,10 @@ bool RendererImp::InitDevice()
     HRESULT hr = S_OK;
 
     UINT createDeviceFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+
+#if defined(_DEBUG)
+    createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
+#endif
 
     D3D_DRIVER_TYPE driverTypes[] =
     {
@@ -163,7 +225,7 @@ bool RendererImp::InitQuad()
     D3D11_SUBRESOURCE_DATA srd = {};
     srd.pSysMem = vertices;
 
-    auto result = device->CreateBuffer(&desc, &srd, &buffer);
+    auto result = device->CreateBuffer(&desc, &srd, &vertexBuffer);
     return SUCCEEDED(result);
 }
 
@@ -204,33 +266,34 @@ float4 main(VS_OUTPUT input) : SV_Target
 {
 	return tex0.Sample(samp0, input.tex);
 })--";
-    auto const vs_blob = CompileShader(vsh, "main", "vs_4_0");
-    auto const ps_blob = CompileShader(psh, "main", "ps_4_0");
 
-    if (!vs_blob || !ps_blob)
+    vertexShaderBlob = CompileShader(vsh, "main", "vs_4_0");
+    pixelShaderBlob = CompileShader(psh, "main", "ps_4_0");
+
+    if (!vertexShaderBlob || !pixelShaderBlob)
     {
         return false;
     }
 
-    if (FAILED(device->CreateVertexShader(vs_blob->GetBufferPointer(), vs_blob->GetBufferSize(), nullptr, &vertexShader)))
+    if (FAILED(device->CreateVertexShader(vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize(), nullptr, &vertexShader)))
     {
         return false;
     }
 
-    D3D11_INPUT_ELEMENT_DESC layout_desc[] =
+    D3D11_INPUT_ELEMENT_DESC layoutDesc[] =
     {
         { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
         { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
     };
 
-    UINT elements = ARRAYSIZE(layout_desc);
+    UINT elements = ARRAYSIZE(layoutDesc);
 
-    if (FAILED(device->CreateInputLayout(layout_desc, elements, vs_blob->GetBufferPointer(), vs_blob->GetBufferSize(), &inputLayout)))
+    if (FAILED(device->CreateInputLayout(layoutDesc, elements, vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize(), &inputLayout)))
     {
         return false;
     }
 
-    if (FAILED(device->CreatePixelShader(ps_blob->GetBufferPointer(), ps_blob->GetBufferSize(), nullptr, &pixelShader)))
+    if (FAILED(device->CreatePixelShader(pixelShaderBlob->GetBufferPointer(), pixelShaderBlob->GetBufferSize(), nullptr, &pixelShader)))
     {
         return false;
     }
@@ -240,8 +303,6 @@ float4 main(VS_OUTPUT input) : SV_Target
 
 bool RendererImp::InitSampler()
 {
-    ID3D11SamplerState* sampler = nullptr;
-
     D3D11_SAMPLER_DESC samplerDesc = {};
     samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
     samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -256,43 +317,53 @@ bool RendererImp::InitSampler()
         return false;
     }
 
+    return true;
+}
+
+bool RendererImp::InitPipelines()
+{
+
+    UINT offset = 0;
+    UINT strides = sizeof(SimpleVertex);
+
+    ID3D11Buffer* vertexBuffers[1] = { vertexBuffer };
+    deviceContext->IASetVertexBuffers(0, 1, vertexBuffers, &strides, &offset);
+    deviceContext->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+    deviceContext->IASetInputLayout(inputLayout);
+    deviceContext->VSSetShader(vertexShader, nullptr, 0);
+    deviceContext->PSSetShader(pixelShader, nullptr, 0);
+
     ID3D11SamplerState* samplers[1] = { sampler };
     deviceContext->PSSetSamplers(0, 1, samplers);
+
     return true;
 }
 
 bool RendererImp::InitRenderTarget(void* surface)
 {
-    HRESULT result = S_OK;
+    HRESULT hr = S_OK;
 
     IUnknown* unknown = (IUnknown*)surface;
     IDXGIResource* dxgiResource;
+    ID3D11Texture2D* outputResource;
 
-    result = unknown->QueryInterface(__uuidof(IDXGIResource), (void**)&dxgiResource);
-    if (FAILED(result))
+    hr = unknown->QueryInterface(__uuidof(IDXGIResource), (void**)&dxgiResource);
+    if (FAILED(hr))
     {
         return false;
     }
 
     HANDLE sharedHandle;
-    result = dxgiResource->GetSharedHandle(&sharedHandle);
+    hr = dxgiResource->GetSharedHandle(&sharedHandle);
     dxgiResource->Release();
-    if (FAILED(result))
+    if (FAILED(hr))
     {
         return false;
     }
 
-    IUnknown* tempResource;
-    result = device->OpenSharedResource(sharedHandle, __uuidof(ID3D11Resource), (void**)(&tempResource));
-    if (FAILED(result))
-    {
-        return false;
-    }
-
-
-    result = tempResource->QueryInterface(__uuidof(ID3D11Texture2D), (void**)(&outputResource));
-    tempResource->Release();
-    if (FAILED(result))
+    hr = device->OpenSharedResource(sharedHandle, __uuidof(ID3D11Texture2D), (void**)(&outputResource));
+    if (FAILED(hr))
     {
         return false;
     }
@@ -302,8 +373,8 @@ bool RendererImp::InitRenderTarget(void* surface)
     rtDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
     rtDesc.Texture2D.MipSlice = 0;
 
-    result = device->CreateRenderTargetView(outputResource, &rtDesc, &renderTargetView);
-    if (FAILED(result))
+    hr = device->CreateRenderTargetView(outputResource, &rtDesc, &renderTargetView);
+    if (FAILED(hr))
     {
         return false;
     }
@@ -326,81 +397,6 @@ bool RendererImp::InitRenderTarget(void* surface)
     }
 
     deviceContext->OMSetRenderTargets(1, &renderTargetView, nullptr);
-
     outputResource->Release();
-
-    return true;
-}
-
-
-bool RendererImp::InitPipelines()
-{
-
-    UINT offset = 0;
-    UINT strides = sizeof(SimpleVertex);
-
-    ID3D11Buffer* buffers[1] = { buffer };
-    deviceContext->IASetVertexBuffers(0, 1, buffers, &strides, &offset);
-    deviceContext->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-
-    deviceContext->IASetInputLayout(inputLayout);
-    deviceContext->VSSetShader(vertexShader, nullptr, 0);
-    deviceContext->PSSetShader(pixelShader, nullptr, 0);
-    return true;
-}
-
-bool RendererImp::CreateTexture(int width, int height, DXGI_FORMAT format, const void* data, size_t row_stride)
-{
-    D3D11_TEXTURE2D_DESC td;
-    td.ArraySize = 1;
-    td.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-    td.CPUAccessFlags = data ? 0 : D3D11_CPU_ACCESS_WRITE;
-    td.Format = format;
-    td.Width = width;
-    td.Height = height;
-    td.MipLevels = 1;
-    td.MiscFlags = 0;
-    td.SampleDesc.Count = 1;
-    td.SampleDesc.Quality = 0;
-    td.Usage = data ? D3D11_USAGE_DEFAULT : D3D11_USAGE_DYNAMIC;
-
-    D3D11_SUBRESOURCE_DATA srd;
-    srd.pSysMem = data;
-    srd.SysMemPitch = static_cast<uint32_t>(row_stride);
-    srd.SysMemSlicePitch = 0;
-
-    ID3D11Texture2D* tex = nullptr;
-    auto hr = device->CreateTexture2D(&td, data ? &srd : nullptr, &tex);
-    if (FAILED(hr)) {
-        return false;
-    }
-
-    D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
-    srv_desc.Format = td.Format;
-    srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-    srv_desc.Texture2D.MostDetailedMip = 0;
-    srv_desc.Texture2D.MipLevels = 1;
-
-    hr = device->CreateShaderResourceView(tex, &srv_desc, &shaderResourceView);
-
-    if (FAILED(hr))
-    {
-        tex->Release();
-        return false;
-    }
-
-    return true;
-}
-
-bool RendererImp::CreateTestTexture()
-{
-    auto size = 100 * 100 * 4;
-    byte* texture = new byte[size];
-    for (int i = 0; i < size; i += 4)
-    {
-        *((UINT*)(texture + i)) = 0xFF0000FF;
-    }
-
-    CreateTexture(100, 100, DXGI_FORMAT_R8G8B8A8_UNORM, texture, 100 * 4);
     return true;
 }
