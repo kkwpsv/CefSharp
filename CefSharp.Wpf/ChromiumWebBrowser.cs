@@ -1189,6 +1189,7 @@ namespace CefSharp.Wpf
         /// The can go forward property
         /// </summary>
         public static DependencyProperty CanGoForwardProperty = DependencyProperty.Register(nameof(CanGoForward), typeof(bool), typeof(ChromiumWebBrowser));
+        private TimeSpan lastRender;
 
         #endregion
 
@@ -1843,6 +1844,19 @@ namespace CefSharp.Wpf
         {
             var isVisible = (bool)args.NewValue;
 
+
+            if (RenderHandler is AcceleratedPaintRenderHandler)
+            {
+                if (isVisible)
+                {
+                    CompositionTarget.Rendering += CompositionTarget_Rendering;
+                }
+                else
+                {
+                    CompositionTarget.Rendering -= CompositionTarget_Rendering;
+                }
+            }
+
             if (browser != null)
             {
                 var host = browser.GetHost();
@@ -1867,6 +1881,20 @@ namespace CefSharp.Wpf
                 }
             }
         }
+
+        private void CompositionTarget_Rendering(object sender, EventArgs e)
+        {
+            RenderingEventArgs args = (RenderingEventArgs)e;
+
+            // It's possible for Rendering to call back twice in the same frame 
+            // so only render when we haven't already rendered in this frame.
+            if (this.lastRender != args.RenderingTime)
+            {
+                this.GetBrowserHost()?.SendExternalBeginFrame();
+                this.lastRender = args.RenderingTime;
+            }
+        }
+
 
         /// <summary>
         /// Handles the <see cref="E:ApplicationExit" /> event.
@@ -1916,11 +1944,6 @@ namespace CefSharp.Wpf
             browserScreenLocation = GetBrowserScreenLocation();
 
             (PresentationSource.FromVisual(this) as HwndSource).AddHook(DpiChangedHook);
-
-            if (RenderHandler is AcceleratedPaintRenderHandler)
-            {
-                CompositionTarget.Rendering += (_, __) => { this.GetBrowserHost()?.SendExternalBeginFrame(); };
-            }
         }
 
         private IntPtr DpiChangedHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
