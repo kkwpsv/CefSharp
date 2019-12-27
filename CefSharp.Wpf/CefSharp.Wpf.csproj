@@ -80,6 +80,7 @@
   <ItemGroup>
     <Compile Include="CefSettings.cs" />
     <Compile Include="Experimental\ChromiumWebBrowserWithTouchSupport.cs" />
+    <Compile Include="Experimental\ChromiumWebBrowserWithTouchSupportAndAccerelatePaint.cs" />
     <Compile Include="Internals\DragOperationMaskExtensions.cs" />
     <Compile Include="Internals\ImeHandler.cs" />
     <Compile Include="Internals\MonitorInfo.cs" />

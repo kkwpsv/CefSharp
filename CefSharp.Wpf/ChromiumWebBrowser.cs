@@ -563,7 +563,7 @@ namespace CefSharp.Wpf
 
             ResourceHandlerFactory = new DefaultResourceHandlerFactory();
             browserSettings = new BrowserSettings(frameworkCreated: true);
-            RenderHandler = new AcceleratedPaintRenderHandler();
+            RenderHandler = new InteropBitmapRenderHandler();
 
             WpfKeyboardHandler = new WpfKeyboardHandler(this);
 
@@ -1787,8 +1787,6 @@ namespace CefSharp.Wpf
         {
             var windowInfo = new WindowInfo();
             windowInfo.SetAsWindowless(handle);
-            windowInfo.ExternalBeginFrameEnabled = true;
-            windowInfo.SharedTextureEnabled = true;
             return windowInfo;
         }
 
