@@ -103,7 +103,12 @@ namespace CefSharp.Wpf.Experimental
 
                     browser.GetHost().SendTouchEvent(touchEvent);
                 }
-                e.Handled = true;
+
+                //Not handle up event which may cause touch failure in ealier .NET Framework.
+                if (touchEventType == TouchEventType.Released)
+                {
+                    e.Handled = true;
+                }
             }
         }
     }

@@ -2381,7 +2381,11 @@ namespace CefSharp.Wpf
 
                 browser.GetHost().SendTouchEvent(touchEvent);
 
-                e.Handled = true;
+                //Not handle up event which may cause touch failure in ealier .NET Framework.
+                if (touchPoint.Action != TouchAction.Up)
+                {
+                    e.Handled = true;
+                }
             }
         }
 
