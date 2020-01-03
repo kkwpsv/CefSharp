@@ -2153,6 +2153,7 @@ namespace CefSharp.Wpf
                 browser.GetHost().SendMouseMoveEvent((int)point.X, (int)point.Y, false, modifiers);
             }
 
+            e.Handled = true;
             base.OnMouseMove(e);
         }
 
@@ -2203,6 +2204,7 @@ namespace CefSharp.Wpf
                 OnMouseButton(e);
             }
 
+            e.Handled = true;
             base.OnMouseDown(e);
         }
 
@@ -2221,9 +2223,10 @@ namespace CefSharp.Wpf
             if (e.StylusDevice == null)
             {
                 OnMouseButton(e);
-
-                base.OnMouseUp(e);
             }
+
+            e.Handled = true;
+            base.OnMouseUp(e);
         }
 
         /// <summary>
@@ -2255,8 +2258,9 @@ namespace CefSharp.Wpf
                 }
 
                 ((IWebBrowserInternal)this).SetTooltipText(null);
-            }
 
+            }
+            e.Handled = true;
             base.OnMouseLeave(e);
         }
 
@@ -2290,8 +2294,6 @@ namespace CefSharp.Wpf
                 {
                     browser.GetHost().SendMouseClickEvent((int)point.X, (int)point.Y, (MouseButtonType)e.ChangedButton, mouseUp, e.ClickCount, modifiers);
                 }
-
-                e.Handled = true;
             }
         }
 
