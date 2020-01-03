@@ -103,7 +103,13 @@ namespace CefSharp.Wpf.Experimental
 
                     browser.GetHost().SendTouchEvent(touchEvent);
                 }
-                e.Handled = true;
+
+                //Not handle up event which may cause touch failure in ealier .NET Framework.
+                //https://translate.google.com/translate?sl=auto&tl=en&u=https%3A%2F%2Fblog.walterlv.com%2Fwpf%2F2017%2F09%2F12%2Ftouch-not-work-in-wpf.html%23%25E7%25AC%25AC%25E4%25BA%258C%25E7%25A7%258D%25E6%2583%2585%25E5%2586%25B5
+                if (touchEventType == TouchEventType.Released)
+                {
+                    e.Handled = true;
+                }
             }
         }
     }

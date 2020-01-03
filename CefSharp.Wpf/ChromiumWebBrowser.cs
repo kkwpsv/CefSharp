@@ -2474,6 +2474,7 @@ namespace CefSharp.Wpf
                 browser.GetHost().SendMouseMoveEvent((int)point.X, (int)point.Y, false, modifiers);
             }
 
+            e.Handled = true;
             base.OnMouseMove(e);
         }
 
@@ -2533,6 +2534,7 @@ namespace CefSharp.Wpf
                 }
             }
 
+            e.Handled = true;
             base.OnMouseDown(e);
         }
 
@@ -2563,6 +2565,7 @@ namespace CefSharp.Wpf
                 }
             }
 
+            e.Handled = true;
             base.OnMouseUp(e);
         }
 
@@ -2586,8 +2589,9 @@ namespace CefSharp.Wpf
                 browser.GetHost().SendMouseMoveEvent((int)point.X, (int)point.Y, true, modifiers);
 
                 ((IWebBrowserInternal)this).SetTooltipText(null);
-            }
 
+            }
+            e.Handled = true;
             base.OnMouseLeave(e);
         }
 
@@ -2636,8 +2640,6 @@ namespace CefSharp.Wpf
                 {
                     browser.GetHost().SendMouseClickEvent((int)point.X, (int)point.Y, (MouseButtonType)e.ChangedButton, mouseUp, e.ClickCount, modifiers);
                 }
-
-                e.Handled = true;
             }
         }
 
@@ -2723,7 +2725,12 @@ namespace CefSharp.Wpf
 
                 browser.GetHost().SendTouchEvent(touchEvent);
 
-                e.Handled = true;
+                //Not handle up event which may cause touch failure in ealier .NET Framework.
+                //https://translate.google.com/translate?sl=auto&tl=en&u=https%3A%2F%2Fblog.walterlv.com%2Fwpf%2F2017%2F09%2F12%2Ftouch-not-work-in-wpf.html%23%25E7%25AC%25AC%25E4%25BA%258C%25E7%25A7%258D%25E6%2583%2585%25E5%2586%25B5
+                if (touchPoint.Action != TouchAction.Up)
+                {
+                    e.Handled = true;
+                }
             }
         }
 
