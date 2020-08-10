@@ -11,7 +11,7 @@ namespace CefSharp.Example.DevTools
     /// </summary>
     public class TaskMethodDevToolsMessageObserver : IDevToolsMessageObserver
     {
-        private readonly TaskCompletionSource<Tuple<bool, byte[]>> taskCompletionSource = new TaskCompletionSource<Tuple<bool, byte[]>>(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource<Tuple<bool, byte[]>> taskCompletionSource = new TaskCompletionSource<Tuple<bool, byte[]>>(/*TaskCreationOptions.RunContinuationsAsynchronously*/);
         private readonly int matchMessageId;
 
         public TaskMethodDevToolsMessageObserver(int messageId)

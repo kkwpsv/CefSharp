@@ -14,7 +14,7 @@ namespace CefSharp.Wpf.Example
         protected override void OnStartup(StartupEventArgs e)
         {
             //System.AppContext.SetSwitch("Switch.System.Windows.Input.Stylus.DisableStylusAndTouchSupport", true);
-            System.AppContext.SetSwitch("Switch.System.Windows.Input.Stylus.EnablePointerSupport", true);
+            //System.AppContext.SetSwitch("Switch.System.Windows.Input.Stylus.EnablePointerSupport", true);
 
 
 #if DEBUG

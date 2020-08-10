@@ -24,7 +24,7 @@ namespace CefSharp.Wpf
 
             //Disable GPU Compositing
             //Issue https://github.com/cefsharp/CefSharp/issues/3114
-            CefCommandLineArgs.Add("disable-gpu-compositing");
+            //CefCommandLineArgs.Add("disable-gpu-compositing");
         }
     }
 }

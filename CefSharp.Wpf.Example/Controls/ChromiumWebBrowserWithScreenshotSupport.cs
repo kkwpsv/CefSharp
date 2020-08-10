@@ -69,7 +69,7 @@ namespace CefSharp.Wpf.Example.Controls
                 throw new Exception("IBrowserHost is null");
             }
 
-            screenshotTaskCompletionSource = new TaskCompletionSource<InteropBitmap>(TaskCreationOptions.RunContinuationsAsynchronously);
+            screenshotTaskCompletionSource = new TaskCompletionSource<InteropBitmap>(/*TaskCreationOptions.RunContinuationsAsynchronously*/);
 
             if (cancellationToken.HasValue)
             {

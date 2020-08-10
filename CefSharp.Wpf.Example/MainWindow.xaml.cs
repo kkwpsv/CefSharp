@@ -156,7 +156,7 @@ namespace CefSharp.Wpf.Example
                     {
                         var requestContext = browser.GetBrowserHost().RequestContext;
 
-                        var dir = Path.Combine(AppContext.BaseDirectory, @"..\..\..\..\CefSharp.Example\Extensions");
+                        var dir = Path.Combine(Environment.CurrentDirectory, @"..\..\..\..\CefSharp.Example\Extensions");
                         dir = Path.GetFullPath(dir);
                         if (!Directory.Exists(dir))
                         {
