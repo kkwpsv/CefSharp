@@ -723,6 +723,7 @@ namespace CefSharp.Wpf
             managedCefBrowserAdapter = new ManagedCefBrowserAdapter(this, true);
 
             browserSettings = new BrowserSettings(frameworkCreated: true);
+            browserSettings.WindowlessFrameRate = 60;
             RenderHandler = new InteropBitmapRenderHandler();
 
             WpfKeyboardHandler = new WpfImeKeyboardHandler(this);

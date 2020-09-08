@@ -68,7 +68,10 @@ namespace CefSharp.Wpf.Rendering
                     currentSize.Width = width;
                 }
 
-                NativeMethodWrapper.MemoryCopy(viewAccessor.SafeMemoryMappedViewHandle.DangerousGetHandle(), buffer, numberOfBytes);
+                for (int offset = width * dirtyRect.Y + dirtyRect.X; offset < (dirtyRect.Y + dirtyRect.Height) * width; offset += width)
+                {
+                    NativeMethodWrapper.MemoryCopy(viewAccessor.SafeMemoryMappedViewHandle.DangerousGetHandle() + offset * BytesPerPixel, buffer + offset * BytesPerPixel, dirtyRect.Width * BytesPerPixel);
+                }
 
                 //Take a reference to the sourceBuffer that's used to update our WritableBitmap,
                 //once we're on the UI thread we need to check if it's still valid
