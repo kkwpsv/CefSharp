@@ -660,7 +660,7 @@ namespace CefSharp.Wpf
         [MethodImpl(MethodImplOptions.NoInlining)]
         private void NoInliningConstructor()
         {
-            EnableResizeHackForIssue2779 = true;
+            EnableResizeHackForIssue2779 = false;
             ResizeHackForIssue2279DelayInMs = 50;
 
             //Initialize CEF if it hasn't already been initialized
@@ -1930,7 +1930,7 @@ namespace CefSharp.Wpf
                             {
                                 try
                                 {
-                                    host.WasHidden(false);
+                                    //host.WasHidden(false);
 
                                     await ResizeHackFor2779();
                                 }
@@ -1962,7 +1962,7 @@ namespace CefSharp.Wpf
 
                             try
                             {
-                                host.WasHidden(true);
+                                //host.WasHidden(true);
                             }
                             catch (ObjectDisposedException)
                             {
@@ -2211,7 +2211,7 @@ namespace CefSharp.Wpf
                     {
                         try
                         {
-                            host.WasHidden(!isVisible);
+                            //host.WasHidden(!isVisible);
 
                             if (isVisible)
                             {
