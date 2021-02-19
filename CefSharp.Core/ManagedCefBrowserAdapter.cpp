@@ -89,6 +89,11 @@ __declspec(noinline) void ManagedCefBrowserAdapter::InitializeBrowserProcessServ
     }
 }
 
+void AbortBrowserProcessServiceHost(Object^ browserProcessServiceHost)
+{
+    ((BrowserProcessServiceHost^)browserProcessServiceHost)->Abort();
+}
+
 // NOTE: This was moved out of ~ManagedCefBrowserAdapter to prevent the System.ServiceModel assembly from being loaded when WCF is not enabled.
 __declspec(noinline) void ManagedCefBrowserAdapter::DisposeBrowserProcessServiceHost()
 {
@@ -100,7 +105,7 @@ __declspec(noinline) void ManagedCefBrowserAdapter::DisposeBrowserProcessService
         }
         else
         {
-            _browserProcessServiceHost->Abort();
+            Task::Factory->StartNew(gcnew Action<Object^>(AbortBrowserProcessServiceHost), _browserProcessServiceHost);
         }
         _browserProcessServiceHost = nullptr;
     }
